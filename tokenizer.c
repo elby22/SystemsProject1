@@ -2,6 +2,7 @@
  * tokenizer.c
  */
 #include <stdio.h>
+#include <string.h>
 
 /*
  * Tokenizer type.  You need to fill in the type as part of your implementation.
@@ -9,9 +10,19 @@
 
 struct TokenizerT_ {
 };
-
 typedef struct TokenizerT_ TokenizerT;
 
+struct Token_ {
+  char type[32];
+  char *subString;
+};
+typedef struct Token_ Token;
+
+struct Node_ {
+  Token token;
+  struct Node_ *next;
+};
+typedef struct Node_ Node;
 /*
  * TKCreate creates a new TokenizerT object for a given token stream
  * (given as a string).
@@ -73,12 +84,30 @@ int main(int argc, char **argv) {
   int p = 0;
   int q = 0;
   int length = strlen(string);
-  
+  int i;
+  int j;
   while (p < length){
-    //if(isDelim(string[p])
+    if(1){
+    /* if(isLetter(string[p])){
+        while(isWord(string[q])){ */
+      while(q < length){
+        q++;
+      }
+      
+      /*
+      * (q-p) + 1  for array size
+      */
+      Node *temp = malloc(sizeof(Node) + (q-p));
+      /* temp->token.type = "word"; */
+      
+      j = 0;
+      for(i = p; i < q-1; i++){
+        temp->token.subString[j] = string[i];
+        j++;
+      }
+      temp->token.subString[j+1] = '\0';
+    }
     break;
   }
-  
-  
   return 0;
 }
