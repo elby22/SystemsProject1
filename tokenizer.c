@@ -66,12 +66,19 @@ char *TKGetNextToken( TokenizerT * tk ) {
  */
 
 int main(int argc, char **argv) {
-  
-  printf("Hello World!\n");
-  
   char *string = argv[1];
   
   printf("Input string: %s\n", string);
+  
+  int p = 0;
+  int q = 0;
+  int length = strlen(string);
+  
+  while (p < length){
+    //if(isDelim(string[p])
+    break;
+  }
+  
   
   return 0;
 }
