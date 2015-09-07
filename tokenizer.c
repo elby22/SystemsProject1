@@ -3,26 +3,30 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
-/*
- * Tokenizer type.  You need to fill in the type as part of your implementation.
- */
-
-struct TokenizerT_ {
-};
-typedef struct TokenizerT_ TokenizerT;
 
 struct Token_ {
-  char type[32];
+  char *type;
   char *subString;
 };
 typedef struct Token_ Token;
 
 struct Node_ {
-  Token token;
+  Token *token;
   struct Node_ *next;
 };
 typedef struct Node_ Node;
+
+/*
+ * Tokenizer type.  You need to fill in the type as part of your implementation.
+ */
+struct TokenizerT_ {
+    Node *root;
+    char *tokenString;
+};
+typedef struct TokenizerT_ TokenizerT;
+
 /*
  * TKCreate creates a new TokenizerT object for a given token stream
  * (given as a string).
@@ -84,30 +88,47 @@ int main(int argc, char **argv) {
   int p = 0;
   int q = 0;
   int length = strlen(string);
-  int i;
-  int j;
+  int i = 0;
+  int j = 0;
+  Node *root = 0;
   while (p < length){
-    if(1){
-    /* if(isLetter(string[p])){
-        while(isWord(string[q])){ */
-      while(q < length){
-        q++;
-      }
-      
+      if(isalpha(string[p])){
+          printf("p: %d\n", p);
+          while(isalnum(string[q])){
+              q++;
+          }
+      	  printf("q: %d\n", q);
       /*
       * (q-p) + 1  for array size
       */
-      Node *temp = malloc(sizeof(Node) + (q-p));
-      /* temp->token.type = "word"; */
-      
-      j = 0;
-      for(i = p; i < q-1; i++){
-        temp->token.subString[j] = string[i];
-        j++;
+          Node *temp = malloc(sizeof(Node));
+          temp->token = malloc(sizeof(Token));
+          temp->token->type = malloc(5);
+          temp->token->type = "word\0";
+          temp->token->subString = malloc((q-p) + 1);
+          /*temp->token->type = "Word";*/
+          j = 0;
+          for(i = p; i < q; i++){
+              temp->token->subString[j] = string[i];
+              j++;
+          }
+          temp->token->subString[j+1] = '\0';
+          printf("token: %s\n", temp->token->subString);
+          printf("type: %s\n", temp->token->type);
+	  temp->next = root;
+          root = temp;
+      }else if(isspace(string[p])){
+          printf("spaceChar\n");
+          q++;	
       }
-      temp->token.subString[j+1] = '\0';
+      p = q;
     }
-    break;
+
+  /*Prints all tokens in the linked list */
+  printf("Final output test: \n");
+  while(root != 0){
+      printf("%s \"%s\"\n", root->token->type, root->token->subString);
+      root = root->next;	  
   }
   return 0;
 }
