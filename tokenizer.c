@@ -2,10 +2,13 @@
  * tokenizer.c
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
-
+/*
+ * Token type. Essentially a linked list of tokens, the head of which is the tokenList of the TokenizerT.
+ */
 struct Token_ {
   char *type;
   char *string;
@@ -13,18 +16,13 @@ struct Token_ {
 };
 typedef struct Token_ Token;
 
-struct Node_ {
-  Token *token;
-  struct Node_ *next;
-};
-typedef struct Node_ Node;
-
 /*
  * Tokenizer type.  You need to fill in the type as part of your implementation.
  */
 struct TokenizerT_ {
-    Node *tokenList;
+    Token *tokenList;
     char *tokenString;
+	int position;
 };
 typedef struct TokenizerT_ TokenizerT;
 
@@ -47,6 +45,7 @@ TokenizerT *TKCreate( char * ts ) {
 	Tokenizer->tokenString = malloc(sizeof(char) * strlen(ts));
 	Tokenizer->tokenList = 0;
 	strcpy(Tokenizer->tokenString, ts);
+	Tokenizer->position = 0;
 	return Tokenizer;
 }
 
@@ -73,8 +72,50 @@ void TKDestroy( TokenizerT * tk ) {
  */
 
 char *TKGetNextToken( TokenizerT * tk ) {
-
-  return NULL;
+	int p = tk->position;
+	int q = p;
+	int i = 0;
+	int j = 0;
+	int length = strlen(tk->tokenString);
+	Token *token;
+	if(p < length){
+		if(isalpha(tk->tokenString[p])){
+			printf("p: %d\n", p);	
+			while(isalnum(tk->tokenString[q])){
+				q++;
+            }
+      	  	printf("q: %d\n", q);
+      /*
+      * (q-p) + 1  for array size
+      */
+          token = malloc(sizeof(Token));	
+          token->type = malloc(5);
+          token->type = "word\0";
+          token->string = malloc((q-p) + 1);
+          /*
+          *
+          */ 	
+          j = 0;
+          for(i = p; i < q; i++){
+              token->string[j] = tk->tokenString[i];
+              j++;
+          }
+          token->string[j+1] = '\0';
+          printf("token: %s\n", token->string);
+          printf("type: %s\n", token->type);
+		  token->next = tk->tokenList;
+          tk->tokenList = token;
+      }else if(isspace(tk->tokenString[p])){
+          printf("spaceChar\n");
+          q++;	
+      }else{
+          return 0;
+      }
+      p = q;
+      tk->position = p;
+	  return token->string;
+	}
+	return 0;
 }
 
 /*
@@ -86,52 +127,19 @@ char *TKGetNextToken( TokenizerT * tk ) {
 
 int main(int argc, char **argv) {
 	TokenizerT *Tokenizer = TKCreate(argv[1]);
-	char *string = argv[1];
     printf("Input: %s\n", Tokenizer->tokenString);
-  int p = 0;
-  int q = 0;
-  int length = strlen(string);
-  int i = 0;
-  int j = 0;
-  Node *root = 0;
-  while (p < length){
-      if(isalpha(string[p])){
-          printf("p: %d\n", p);
-          while(isalnum(string[q])){
-              q++;
-          }
-      	  printf("q: %d\n", q);
-      /*
-      * (q-p) + 1  for array size
-      */
-          Node *temp = malloc(sizeof(Node));
-          temp->token = malloc(sizeof(Token));
-          temp->token->type = malloc(5);
-          temp->token->type = "word\0";
-          temp->token->string = malloc((q-p) + 1);
-          /*temp->token->type = "Word";*/
-          j = 0;
-          for(i = p; i < q; i++){
-              temp->token->string[j] = string[i];
-              j++;
-          }
-          temp->token->string[j+1] = '\0';
-          printf("token: %s\n", temp->token->string);
-          printf("type: %s\n", temp->token->type);
-		  temp->next = root;
-          root = temp;
-      }else if(isspace(string[p])){
-          printf("spaceChar\n");
-          q++;	
-      }
-      p = q;
-    }
+    
+	while(TKGetNextToken(Tokenizer) != 0);
+    printTokens(Tokenizer);
+	return 0;
+}
 
-  /*Prints all tokens in the linked list */
-  printf("Final output test: \n");
-  while(root != 0){
-      printf("%s \"%s\"\n", root->token->type, root->token->string);
-      root = root->next;	  
-  }
-  return 0;
+void printTokens(TokenizerT *tk){	
+	/*Prints all tokens in the linked list */
+	printf("Final output test: \n");
+	Token *root = tk->tokenList;
+	while(root != 0){
+		printf("%s \"%s\"\n", root->type, root->string);
+		root = root->next;		  
+    }
 }
