@@ -8,7 +8,7 @@
 
 struct Token_ {
   char *type;
-  char *subString;
+  char *string;
   struct Token_ *next;
 };
 typedef struct Token_ Token;
@@ -43,8 +43,11 @@ typedef struct TokenizerT_ TokenizerT;
  */
 
 TokenizerT *TKCreate( char * ts ) {
-
-  return NULL;
+    TokenizerT *Tokenizer = malloc(sizeof(TokenizerT));
+	Tokenizer->tokenString = malloc(sizeof(char) * strlen(ts));
+	Tokenizer->tokenList = 0;
+	strcpy(Tokenizer->tokenString, ts);
+	return Tokenizer;
 }
 
 /*
@@ -82,10 +85,9 @@ char *TKGetNextToken( TokenizerT * tk ) {
  */
 
 int main(int argc, char **argv) {
-  char *string = argv[1];
-  
-  printf("Input string: %s\n", string);
-  
+	TokenizerT *Tokenizer = TKCreate(argv[1]);
+	char *string = argv[1];
+    printf("Input: %s\n", Tokenizer->tokenString);
   int p = 0;
   int q = 0;
   int length = strlen(string);
@@ -106,17 +108,17 @@ int main(int argc, char **argv) {
           temp->token = malloc(sizeof(Token));
           temp->token->type = malloc(5);
           temp->token->type = "word\0";
-          temp->token->subString = malloc((q-p) + 1);
+          temp->token->string = malloc((q-p) + 1);
           /*temp->token->type = "Word";*/
           j = 0;
           for(i = p; i < q; i++){
-              temp->token->subString[j] = string[i];
+              temp->token->string[j] = string[i];
               j++;
           }
-          temp->token->subString[j+1] = '\0';
-          printf("token: %s\n", temp->token->subString);
+          temp->token->string[j+1] = '\0';
+          printf("token: %s\n", temp->token->string);
           printf("type: %s\n", temp->token->type);
-	  temp->next = root;
+		  temp->next = root;
           root = temp;
       }else if(isspace(string[p])){
           printf("spaceChar\n");
@@ -128,7 +130,7 @@ int main(int argc, char **argv) {
   /*Prints all tokens in the linked list */
   printf("Final output test: \n");
   while(root != 0){
-      printf("%s \"%s\"\n", root->token->type, root->token->subString);
+      printf("%s \"%s\"\n", root->token->type, root->token->string);
       root = root->next;	  
   }
   return 0;
