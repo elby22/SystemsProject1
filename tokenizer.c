@@ -9,6 +9,7 @@
 struct Token_ {
   char *type;
   char *subString;
+  struct Token_ *next;
 };
 typedef struct Token_ Token;
 
@@ -22,7 +23,7 @@ typedef struct Node_ Node;
  * Tokenizer type.  You need to fill in the type as part of your implementation.
  */
 struct TokenizerT_ {
-    Node *root;
+    Node *tokenList;
     char *tokenString;
 };
 typedef struct TokenizerT_ TokenizerT;
