@@ -109,33 +109,75 @@ char *TKGetNextToken( TokenizerT * tk ) {
           printf("type: %s\n", token->type);
 		  token->next = tk->tokenList;
           tk->tokenList = token;
-		}else if(tk->tokenString[p] == "0"){
+		
+		/*This section will handle all numbers starting with 0, including Hex, Float, Decimal, and Octal */
+		}else if(tk->tokenString[p] == '0'){
+		
 			printf("p: %d\n", p);
-			/*
-			*This will be where hex/decimal/float/octal that start is "0" go
-			*
-			*
-			*/
+			/*handles Hex*/
+			if(tk->tokenString[p+1] != NULL && tk->tokenString[p+1] == 'x' || tk->tokenString[p+1] == 'X'){
+				
+				q = p+2;
+				while(isxdigit(tk->tokenString[q])){
+					q++;
+				}
+				
+				token = malloc(sizeof(Token));
+				token->type = malloc(29);
+				token->type = "hexadecimal integer constant\0";
+				token->string = malloc((q-p) +1);
+				
+			/*handles decimal and octal*/	
+			}else{
+				while(isdigit(tk->tokenString[q])){
+					if(tk->tokenString[q] == '8' || tk->tokenString[q] == '9'){   /*checks if decimal or octal*/
+						octalCheck = 1;											  /*designates that this token is not Octal*/
+					}
+					q++;
+				}
+				
+				printf("q: %d\n", q);
+			
+				token = malloc(sizeof(Token));	
+				if(octalCheck == 0){
+					token->type = malloc(23);
+					token->type = "octal integer constant\0";
+					token->string = malloc((q-p) + 1);
+				}else{
+					token->type = malloc(25);
+					token->type = "decimal integer constant\0";
+					token->string = malloc((q-p) + 1);
+				}
+			
+			}
+			
+			
+			j = 0;
+			for(i = p; i < q; i++){
+				token->string[j] = tk->tokenString[i];
+				j++;
+			}
+		  
+			token->string[j+1] = '\0';
+			printf("token: %s\n", token->string);
+			printf("type: %s\n", token->type);
+			token->next = tk->tokenList;
+			tk->tokenList = token;
+			
+		/*Finds Octal and Decimal tokens that don't start with 0. Still needs error checking but shouldn't be a big deal.
+		I'll do error checking tomorrow after class */
 		}else if(isdigit(tk->tokenString[p]) && tk->tokenString[p] != "0"){
 			while(isdigit(tk->tokenString[q])){
-				if(tk->tokenString[q] == '8' || tk->tokenString[q] == '9'){
-					octalCheck = 1;
-				}
 				q++;
 			}
 			
 			printf("q: %d\n", q);
 			
 		    token = malloc(sizeof(Token));	
-			if(octalCheck == 0){
-				token->type = malloc(23);
-				token->type = "octal integer constant\0";
-				token->string = malloc((q-p) + 1);
-			}else{
-				token->type = malloc(25);
-				token->type = "decimal integer constant\0";
-				token->string = malloc((q-p) + 1);
-			}
+			token->type = malloc(25);
+			token->type = "decimal integer constant\0";
+			token->string = malloc((q-p) + 1);
+			
 			
 			j = 0;
 			for(i = p; i < q; i++){
