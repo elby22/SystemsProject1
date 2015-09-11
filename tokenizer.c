@@ -24,7 +24,7 @@ struct TokenizerT_ {
 };
 typedef struct TokenizerT_ TokenizerT;
 
-void addToken(TokenizerT *tk, char *type, int p, int q);
+char *addToken(TokenizerT *tk, char *type, int p, int q);
 
 char *keywords[] = {"if","auto","break","case","char","const","continue","default","do","double","else","enum","extern","float","for","goto","int","long","register","return","short","signed","sizeof","static","struct","switch","typedef","union","unsigned","void","volatile","while"};
 /*
@@ -82,12 +82,11 @@ char *TKGetNextToken( TokenizerT * tk ) {
 	int length = strlen(tk->tokenString);
 	int octalCheck = 0;
   char *type;
-	if(p < length){
+	while(p < length){
 		if(isalpha(tk->tokenString[p])){
 			while(isalnum(tk->tokenString[q])){
 				q++;
       }
-      
       type = "word";
 
       /*Extra credit - Checking for c keywords
@@ -105,7 +104,7 @@ char *TKGetNextToken( TokenizerT * tk ) {
           break;
         }
       }
-      addToken(tk, type, p, q);
+      return addToken(tk, type, p, q);
 		/*This section will handle all numbers starting with 0, including Hex, Float, Decimal, and Octal */
 		}else if(tk->tokenString[p] == '0'){
 			/*handles Hex*/
@@ -116,7 +115,7 @@ char *TKGetNextToken( TokenizerT * tk ) {
 				}
 				
 				type = "hexadecimal integer constant";
-        addToken(tk, type, p, q);
+        return addToken(tk, type, p, q);
 			/*handles decimal and octal*/
 			}else{
 				while(isdigit(tk->tokenString[q])){
@@ -128,10 +127,10 @@ char *TKGetNextToken( TokenizerT * tk ) {
 			
 				if(octalCheck == 0){
 					type = "octal integer constant";
-					addToken(tk, type, p, q);
+					return addToken(tk, type, p, q);
 				}else{
 					type = "decimal integer constant";
-					addToken(tk, type, p, q);
+					return addToken(tk, type, p, q);
 				}
 			}
 		/*Finds Octal and Decimal tokens that don't start with 0. Still needs error checking but shouldn't be a big deal.
@@ -142,7 +141,7 @@ char *TKGetNextToken( TokenizerT * tk ) {
 			}
 			
 			type = "decimal integer constant";
-			addToken(tk, type, p, q);
+			return addToken(tk, type, p, q);
 		/*EXTRA CREDIT - Check for tokes within double quotes*/
 		}else if(tk->tokenString[p] == '"'){
 		  q++;
@@ -151,7 +150,7 @@ char *TKGetNextToken( TokenizerT * tk ) {
 			}
 			q++;
 			type = "double-quoted";
-			addToken(tk, type, p, q);
+			return addToken(tk, type, p, q);
 		/*EXTRA CREDIT - Check for tokes within single quotes*/
 		}else if(tk->tokenString[p] == '\''){
 		  q++;
@@ -160,11 +159,14 @@ char *TKGetNextToken( TokenizerT * tk ) {
 			}
 			q++;
 			type = "single-quoted";
-			addToken(tk, type, p, q);
+			return addToken(tk, type, p, q);
 			
 /*Check for whitespace characters, skip over*/
 		}else if(isspace(tk->tokenString[p])){
 			q++;
+			p = q;
+		  tk->position = p;
+			continue;
 		/*Check for all C operators and anything that isn't returns 0*/
 		}else{
 		  switch(tk->tokenString[p]){
@@ -234,8 +236,11 @@ char *TKGetNextToken( TokenizerT * tk ) {
 		    	  while(tk->tokenString[q] != '*' && tk->tokenString[q+1] != '/'){
 		    	    q++;
 		    	  }
-		    	  type = "comment";
 		    	  q++;
+		    	  q++;
+		    	  p = q;
+		        tk->position = p;
+			      continue;
 		      }else{
 		        type = "division operator";
 		      }
@@ -322,12 +327,10 @@ char *TKGetNextToken( TokenizerT * tk ) {
 		      return 0;
 		  }
 		  q++;
-		  addToken(tk, type, p, q);
+		  return addToken(tk, type, p, q);
 		}
 		p = q;
 		tk->position = p;
-		/*return tk->tokenList->string;*/
-		return "glarf";
 	}
 	return 0;
 }
@@ -347,10 +350,10 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-void addToken(TokenizerT *tk, char *type, int p, int q){
+char *addToken(TokenizerT *tk, char *type, int p, int q){
   int i = 0;
   int j = 0;
-  
+  char *retval;
   Token *token;
   token = malloc(sizeof(Token));
   token->type = malloc((strlen(type) + 1) * sizeof(char));
@@ -367,7 +370,12 @@ void addToken(TokenizerT *tk, char *type, int p, int q){
   token->string[j+1] = '\0';
   
   printf("%s \"%s\"\n", token->type, token->string);
+  retval = malloc(strlen(token->string) * sizeof(char));
+  strcpy(retval, token->string);
   free(token->string);
   free(token->type);
   free(token);
+  p = q;
+  tk->position = p;
+  return retval;
 }
