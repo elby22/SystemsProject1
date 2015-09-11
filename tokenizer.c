@@ -7,15 +7,6 @@
 #include <ctype.h>
 
 /*
- * Token type. Essentially a linked list of tokens, the head of which is the tokenList of the TokenizerT.
- */
-struct Token_ {
-  char *type;
-  char *string;
-};
-typedef struct Token_ Token;
-
-/*
  * Tokenizer type.  You need to fill in the type as part of your implementation.
  */
 struct TokenizerT_ {
@@ -353,29 +344,21 @@ int main(int argc, char **argv) {
 char *addToken(TokenizerT *tk, char *type, int p, int q){
   int i = 0;
   int j = 0;
-  char *retval;
-  Token *token;
-  token = malloc(sizeof(Token));
-  token->type = malloc((strlen(type) + 1) * sizeof(char));
-  token->string = malloc(((q-p) + 2) * sizeof(char));
-  strcpy(token->type, type);
-  
+  char *string;
+  string = malloc(((q-p) + 2) * sizeof(char));
+
   /*
    *Copies the string into the token from the tokenString
    */
   for(i = p; i < q; i++){
-    token->string[j] = tk->tokenString[i];
+    string[j] = tk->tokenString[i];
     j++;
   }
-  token->string[j+1] = '\0';
+  string[j+1] = '\0';
   
-  printf("%s \"%s\"\n", token->type, token->string);
-  retval = malloc(strlen(token->string) * sizeof(char));
-  strcpy(retval, token->string);
-  free(token->string);
-  free(token->type);
-  free(token);
+  printf("%s \"%s\"\n", type, string);
+  
   p = q;
   tk->position = p;
-  return retval;
+  return string;
 }
