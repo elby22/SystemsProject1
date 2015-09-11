@@ -84,7 +84,6 @@ char *TKGetNextToken( TokenizerT * tk ) {
 				q++;
       }
       
-      type = malloc(strlen("word") + 1);
       type = "word";
       addToken(tk, type, p, q);
 		/*This section will handle all numbers starting with 0, including Hex, Float, Decimal, and Octal */
@@ -96,7 +95,6 @@ char *TKGetNextToken( TokenizerT * tk ) {
 					q++;
 				}
 				
-				type = malloc(strlen("hexadecimal integer constant") + 1);
 				type = "hexadecimal integer constant";
         addToken(tk, type, p, q);
 			/*handles decimal and octal*/
@@ -109,11 +107,9 @@ char *TKGetNextToken( TokenizerT * tk ) {
 				}
 			
 				if(octalCheck == 0){
-					type = malloc(strlen("octal integer constant") + 1);
 					type = "octal integer constant";
 					addToken(tk, type, p, q);
 				}else{
-					type = malloc(strlen("decimal integer constant") + 1);
 					type = "decimal integer constant";
 					addToken(tk, type, p, q);
 				}
@@ -125,7 +121,6 @@ char *TKGetNextToken( TokenizerT * tk ) {
 				q++;
 			}
 			
-			type = malloc(strlen("decimal integer constant") + 1);
 			type = "decimal integer constant";
 			addToken(tk, type, p, q);
 		}else if(isspace(tk->tokenString[p])){
@@ -162,7 +157,7 @@ void addToken(TokenizerT *tk, char *type, int p, int q){
   
   Token *token;
   token = malloc(sizeof(Token));
-  token->type = malloc(strlen(type) + 1);
+  token->type = malloc((strlen(type) + 1) * sizeof(char));
   token->string = malloc((q-p) + 2);
   strcpy(token->type, type);
   
@@ -176,5 +171,7 @@ void addToken(TokenizerT *tk, char *type, int p, int q){
   token->string[j+1] = '\0';
   
   printf("%s \"%s\"\n", token->type, token->string);
+  free(token->string);
+  free(token->type);
   free(token);
 }
