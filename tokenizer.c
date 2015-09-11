@@ -12,7 +12,6 @@
 struct Token_ {
   char *type;
   char *string;
-  struct Token_ *next;
 };
 typedef struct Token_ Token;
 
@@ -20,11 +19,12 @@ typedef struct Token_ Token;
  * Tokenizer type.  You need to fill in the type as part of your implementation.
  */
 struct TokenizerT_ {
-    Token *tokenList;
-    char *tokenString;
+  char *tokenString;
 	int position;
 };
 typedef struct TokenizerT_ TokenizerT;
+
+void addToken(TokenizerT *tk, char *type, int p, int q);
 
 /*
  * TKCreate creates a new TokenizerT object for a given token stream
@@ -41,9 +41,8 @@ typedef struct TokenizerT_ TokenizerT;
  */
 
 TokenizerT *TKCreate( char * ts ) {
-    TokenizerT *Tokenizer = malloc(sizeof(TokenizerT));
-	Tokenizer->tokenString = malloc(sizeof(char) * strlen(ts));
-	Tokenizer->tokenList = 0;
+  TokenizerT *Tokenizer = malloc(sizeof(TokenizerT));
+	Tokenizer->tokenString = malloc(sizeof(char) * strlen(ts) + 1);
 	strcpy(Tokenizer->tokenString, ts);
 	Tokenizer->position = 0;
 	return Tokenizer;
@@ -57,6 +56,8 @@ TokenizerT *TKCreate( char * ts ) {
  */
 
 void TKDestroy( TokenizerT * tk ) {
+  free(tk->tokenString);
+  free(tk);
 }
 
 /*
@@ -74,60 +75,31 @@ void TKDestroy( TokenizerT * tk ) {
 char *TKGetNextToken( TokenizerT * tk ) {
 	int p = tk->position;
 	int q = p;
-	int i = 0;
-	int j = 0;
 	int length = strlen(tk->tokenString);
 	int octalCheck = 0;
-	Token *token;
-	
+  char *type;
 	if(p < length){
 		if(isalpha(tk->tokenString[p])){
-			printf("p: %d\n", p);	
 			while(isalnum(tk->tokenString[q])){
 				q++;
-            }
-      	  	printf("q: %d\n", q);
-      /*
-      * (q-p) + 1  for array size
-      */
-          token = malloc(sizeof(Token));	
-          token->type = malloc(5);
-          token->type = "word\0";
-          token->string = malloc((q-p) + 1);
-          /*
-          *
-          */ 	
-	
-          j = 0;
-          for(i = p; i < q; i++){
-              token->string[j] = tk->tokenString[i];
-              j++;
-          }
-		  
-          token->string[j+1] = '\0';
-          printf("token: %s\n", token->string);
-          printf("type: %s\n", token->type);
-		  token->next = tk->tokenList;
-          tk->tokenList = token;
-		
+      }
+      
+      type = malloc(strlen("word") + 1);
+      type = "word";
+      addToken(tk, type, p, q);
 		/*This section will handle all numbers starting with 0, including Hex, Float, Decimal, and Octal */
 		}else if(tk->tokenString[p] == '0'){
-		
-			printf("p: %d\n", p);
 			/*handles Hex*/
-			if(tk->tokenString[p+1] != NULL && tk->tokenString[p+1] == 'x' || tk->tokenString[p+1] == 'X'){
-				
+			if(tk->tokenString[p+1] != NULL && (tk->tokenString[p+1] == 'x' || tk->tokenString[p+1] == 'X')){
 				q = p+2;
 				while(isxdigit(tk->tokenString[q])){
 					q++;
 				}
 				
-				token = malloc(sizeof(Token));
-				token->type = malloc(29);
-				token->type = "hexadecimal integer constant\0";
-				token->string = malloc((q-p) +1);
-				
-			/*handles decimal and octal*/	
+				type = malloc(strlen("hexadecimal integer constant") + 1);
+				type = "hexadecimal integer constant";
+        addToken(tk, type, p, q);
+			/*handles decimal and octal*/
 			}else{
 				while(isdigit(tk->tokenString[q])){
 					if(tk->tokenString[q] == '8' || tk->tokenString[q] == '9'){   /*checks if decimal or octal*/
@@ -135,35 +107,17 @@ char *TKGetNextToken( TokenizerT * tk ) {
 					}
 					q++;
 				}
-				
-				printf("q: %d\n", q);
 			
-				token = malloc(sizeof(Token));	
 				if(octalCheck == 0){
-					token->type = malloc(23);
-					token->type = "octal integer constant\0";
-					token->string = malloc((q-p) + 1);
+					type = malloc(strlen("octal integer constant") + 1);
+					type = "octal integer constant";
+					addToken(tk, type, p, q);
 				}else{
-					token->type = malloc(25);
-					token->type = "decimal integer constant\0";
-					token->string = malloc((q-p) + 1);
+					type = malloc(strlen("decimal integer constant") + 1);
+					type = "decimal integer constant";
+					addToken(tk, type, p, q);
 				}
-			
 			}
-			
-			
-			j = 0;
-			for(i = p; i < q; i++){
-				token->string[j] = tk->tokenString[i];
-				j++;
-			}
-		  
-			token->string[j+1] = '\0';
-			printf("token: %s\n", token->string);
-			printf("type: %s\n", token->type);
-			token->next = tk->tokenList;
-			tk->tokenList = token;
-			
 		/*Finds Octal and Decimal tokens that don't start with 0. Still needs error checking but shouldn't be a big deal.
 		I'll do error checking tomorrow after class */
 		}else if(isdigit(tk->tokenString[p]) && tk->tokenString[p] != "0"){
@@ -171,35 +125,18 @@ char *TKGetNextToken( TokenizerT * tk ) {
 				q++;
 			}
 			
-			printf("q: %d\n", q);
-			
-		    token = malloc(sizeof(Token));	
-			token->type = malloc(25);
-			token->type = "decimal integer constant\0";
-			token->string = malloc((q-p) + 1);
-			
-			
-			j = 0;
-			for(i = p; i < q; i++){
-				token->string[j] = tk->tokenString[i];
-				j++;
-			}
-		  
-			token->string[j+1] = '\0';
-			printf("token: %s\n", token->string);
-			printf("type: %s\n", token->type);
-			token->next = tk->tokenList;
-			tk->tokenList = token;
-			
+			type = malloc(strlen("decimal integer constant") + 1);
+			type = "decimal integer constant";
+			addToken(tk, type, p, q);
 		}else if(isspace(tk->tokenString[p])){
-			printf("spaceChar\n");
-			q++;	
+			q++;
 		}else{
 			return 0;
 		}
 		p = q;
 		tk->position = p;
-		return token->string;
+		/*return tk->tokenList->string;*/
+		return "glarf";
 	}
 	return 0;
 }
@@ -213,19 +150,31 @@ char *TKGetNextToken( TokenizerT * tk ) {
 
 int main(int argc, char **argv) {
 	TokenizerT *Tokenizer = TKCreate(argv[1]);
-    printf("Input: %s\n", Tokenizer->tokenString);
-    
+
 	while(TKGetNextToken(Tokenizer) != 0);
-    printTokens(Tokenizer);
+	TKDestroy(Tokenizer);
 	return 0;
 }
 
-void printTokens(TokenizerT *tk){	
-	/*Prints all tokens in the linked list */
-	printf("Final output test: \n");
-	Token *root = tk->tokenList;
-	while(root != 0){
-		printf("%s \"%s\"\n", root->type, root->string);
-		root = root->next;		  
-    }
+void addToken(TokenizerT *tk, char *type, int p, int q){
+  int i = 0;
+  int j = 0;
+  
+  Token *token;
+  token = malloc(sizeof(Token));
+  token->type = malloc(strlen(type) + 1);
+  token->string = malloc((q-p) + 2);
+  strcpy(token->type, type);
+  
+  /*
+   *Copies the string into the token from the tokenString
+   */
+  for(i = p; i < q; i++){
+    token->string[j] = tk->tokenString[i];
+    j++;
+  }
+  token->string[j+1] = '\0';
+  
+  printf("%s \"%s\"\n", token->type, token->string);
+  free(token);
 }

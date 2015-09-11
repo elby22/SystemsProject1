@@ -1,5 +1,5 @@
 COMPILER = gcc
-CCFLAGS  = -Wall -ansi -pedantic
+CCFLAGS  = -Wall -ansi -pedantic -g
 all: tokenizer
 
 tokenizer: tokenizer.o
