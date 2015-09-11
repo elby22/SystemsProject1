@@ -26,6 +26,7 @@ typedef struct TokenizerT_ TokenizerT;
 
 void addToken(TokenizerT *tk, char *type, int p, int q);
 
+char *keywords[] = {"if","auto","break","case","char","const","continue","default","do","double","else","enum","extern","float","for","goto","int","long","register","return","short","signed","sizeof","static","struct","switch","typedef","union","unsigned","void","volatile","while"};
 /*
  * TKCreate creates a new TokenizerT object for a given token stream
  * (given as a string).
@@ -75,6 +76,9 @@ void TKDestroy( TokenizerT * tk ) {
 char *TKGetNextToken( TokenizerT * tk ) {
 	int p = tk->position;
 	int q = p;
+	int i = 0;
+	int j = 0;
+	char *string;
 	int length = strlen(tk->tokenString);
 	int octalCheck = 0;
   char *type;
@@ -85,11 +89,27 @@ char *TKGetNextToken( TokenizerT * tk ) {
       }
       
       type = "word";
+
+      /*Extra credit - Checking for c keywords
+      *"if" isn't working and I have no idea why. I'm getting some '`' char in gdb. wtf C.
+      */
+      string = malloc((q-p) * sizeof(char));
+      for(i = p; i < q; i++){
+        string[j] = tk->tokenString[i];
+        j++;
+      }
+      
+      for(i = 0; i < 32; i++){ /*32 keywords*/
+        if(strcmp(string, keywords[i]) == 0){
+          type = "c keyword";
+          break;
+        }
+      }
       addToken(tk, type, p, q);
 		/*This section will handle all numbers starting with 0, including Hex, Float, Decimal, and Octal */
 		}else if(tk->tokenString[p] == '0'){
 			/*handles Hex*/
-			if(tk->tokenString[p+1] != NULL && (tk->tokenString[p+1] == 'x' || tk->tokenString[p+1] == 'X')){
+			if(tk->tokenString[p+1] != '\0' && (tk->tokenString[p+1] == 'x' || tk->tokenString[p+1] == 'X')){
 				q = p+2;
 				while(isxdigit(tk->tokenString[q])){
 					q++;
@@ -116,17 +136,185 @@ char *TKGetNextToken( TokenizerT * tk ) {
 			}
 		/*Finds Octal and Decimal tokens that don't start with 0. Still needs error checking but shouldn't be a big deal.
 		I'll do error checking tomorrow after class */
-		}else if(isdigit(tk->tokenString[p]) && tk->tokenString[p] != "0"){
+		}else if(isdigit(tk->tokenString[p]) && tk->tokenString[p] != '0'){
 			while(isdigit(tk->tokenString[q])){
 				q++;
 			}
 			
 			type = "decimal integer constant";
 			addToken(tk, type, p, q);
+		/*EXTRA CREDIT - Check for tokes within double quotes*/
+		}else if(tk->tokenString[p] == '"'){
+		  q++;
+		  while((tk->tokenString[q] != '"')){
+				q++;
+			}
+			q++;
+			type = "double-quoted";
+			addToken(tk, type, p, q);
+		/*EXTRA CREDIT - Check for tokes within single quotes*/
+		}else if(tk->tokenString[p] == '\''){
+		  q++;
+		  while((tk->tokenString[q] != '\'')){
+				q++;
+			}
+			q++;
+			type = "single-quoted";
+			addToken(tk, type, p, q);
+			
+/*Check for whitespace characters, skip over*/
 		}else if(isspace(tk->tokenString[p])){
 			q++;
+		/*Check for all C operators and anything that isn't returns 0*/
 		}else{
-			return 0;
+		  switch(tk->tokenString[p]){
+		    case '(':
+		      type = "open parenthesis";
+		      break;
+		    case ')':
+		      type = "close parenthesis";
+		      break;
+		    case '[':
+		      type = "leftbrace";
+		      break;
+		    case ']':
+		      type = "rightbrace";
+		      break;
+		    case '.':
+		      type = "dot operator";
+		      break;
+		    case '!':
+		      if(tk->tokenString[p+1] == '='){
+		        q++;
+		        type = "not equals operator";
+		      }else{
+		        type = "negation operator";
+		      }
+		      break;
+		    case '~':
+		      type = "tilde";
+		      break;
+		    case '+':
+		    	if(tk->tokenString[p+1] == '+'){
+		        q++;
+		        type = "increment operator";
+		      }else if(tk->tokenString[p+1] == '='){
+		        q++;
+		        type = "increment assignment operator";
+		      }else{
+		        type = "addition operator";
+		      }
+		      break;
+		    case '-':
+		      if(tk->tokenString[p+1] == '-'){
+		        q++;
+		        type = "decrement operator";
+		      }else if(tk->tokenString[p+1] == '='){
+		        q++;
+		        type = "decrement assignment operator";
+		      }else{
+		        type = "subtraction operator";
+		      }
+		      break;
+		    case '*':
+		    	if(tk->tokenString[p+1] == '='){
+		        q++;
+		        type = "multiply assignment operator";
+		      }else{
+		        type = "multiply operator";
+		      }
+		      break;
+		    case '/':
+		    	if(tk->tokenString[p+1] == '='){
+		        q++;
+		        type = "divisiom assignment operator";
+		      }else{
+		        type = "division operator";
+		      }
+		      break;
+		    case '%':
+		    	if(tk->tokenString[p+1] == '='){
+		        q++;
+		        type = "modulus assignment operator";
+		      }else{
+		        type = "modulus operator";
+		      }
+		      break;
+		    case '<':
+		    	if(tk->tokenString[p+1] == '<'){
+		    	  if(tk->tokenString[p+2] == '='){
+		    	    q++;
+		    	    q++;
+		          type = "left shift assignment operator";
+		    	  }else{
+		    	    q++;
+		    	    type = "left shift operator";
+		    	  }
+		    	}else if(tk->tokenString[p+1] == '='){
+		    	  q++;
+		    	  type = "less or equal operator";
+		      }else{
+            type = "less than operator";
+		      }
+		      break;
+		    case '>':
+		    	if(tk->tokenString[p+1] == '>'){
+		    	  if(tk->tokenString[p+2] == '='){
+		    	    q++;
+		    	    q++;
+		          type = "right shift assignment operator";
+		    	  }else{
+		    	    q++;
+		    	    type = "rigth shift operator";
+		    	  }
+		    	}else if(tk->tokenString[p+1] == '='){
+		    	  q++;
+		    	  type = "greater or equal operator";
+		      }else{
+            type = "greater than operator";
+		      }
+		      break;
+		    case '&':
+		    	if(tk->tokenString[p+1] == '&'){
+	    	    q++;
+	    	    type = "logical and operator";
+		    	}else if(tk->tokenString[p+1] == '='){
+		    	  q++;
+	    	    type = "bitwise and assignment operator";
+		      }else{
+            type = "bitwise and operator";
+		      }
+		      break;
+		    case '|':
+		      if(tk->tokenString[p+1] == '|'){
+	    	    q++;
+	    	    type = "logical or operator";
+		    	}else if(tk->tokenString[p+1] == '|'){
+		    	  q++;
+	    	    type = "bitwise or assignment operator";
+		      }else{
+            type = "bitwise or operator";
+		      }
+		      break;
+		    case '^':
+		      if(tk->tokenString[p+1] == '='){
+		        q++;
+		        type = "exclusive or assignment operator";
+		      }else{
+		        type = "exclusive or operator";
+		      }
+		      break;
+		    case ',':
+		      type = "comma operator";
+		      break;
+		    case '?':
+		      type = "ternary operator";
+		      break;
+		    default:  /*Not Recognized*/
+		      return 0;
+		  }
+		  q++;
+		  addToken(tk, type, p, q);
 		}
 		p = q;
 		tk->position = p;
@@ -158,7 +346,7 @@ void addToken(TokenizerT *tk, char *type, int p, int q){
   Token *token;
   token = malloc(sizeof(Token));
   token->type = malloc((strlen(type) + 1) * sizeof(char));
-  token->string = malloc((q-p) + 2);
+  token->string = malloc(((q-p) + 2) * sizeof(char));
   strcpy(token->type, type);
   
   /*
