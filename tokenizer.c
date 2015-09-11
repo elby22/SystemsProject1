@@ -228,6 +228,14 @@ char *TKGetNextToken( TokenizerT * tk ) {
 		    	if(tk->tokenString[p+1] == '='){
 		        q++;
 		        type = "divisiom assignment operator";
+		    	}else if(tk->tokenString[p+1] == '*'){ /*EXTRA CREDIT - Comments*/
+		    	  q++;
+		    	  q++;
+		    	  while(tk->tokenString[q] != '*' && tk->tokenString[q+1] != '/'){
+		    	    q++;
+		    	  }
+		    	  type = "comment";
+		    	  q++;
 		      }else{
 		        type = "division operator";
 		      }
