@@ -73,6 +73,9 @@ char *TKGetNextToken( TokenizerT * tk ) {
 	int length = strlen(tk->tokenString);
 	int octalCheck = 0;
 	int floatCheck = 0;
+	int flOne = 0;
+	int flTwo = 0;
+	int flThree = 0;
   char *type;
 	while(p < length){
 		if(isalpha(tk->tokenString[p])){
@@ -117,8 +120,32 @@ char *TKGetNextToken( TokenizerT * tk ) {
 					if(tk->tokenString[q] == '.'){
 						q++;
 						floatCheck = 1;
-						while(isdigit(tk->tokenString[q])){
+						
+						/*allows for checking for 'e' and 'E' by checking that there is a number
+						after the '.'   also checks for malformed tokens*/
+						if(isdigit(tk->tokenString[q])){
 							q++;
+							
+							/*checks for numbers or 'e' or 'E' for float */
+							while(tk->tokenString[q] == 'E' || tk->tokenString[q] == 'e' || isdigit(tk->tokenString[q])){
+								
+								/*once an 'e' or 'E' has been found, only checks for numbers*/
+								if(tk->tokenString[q] == 'E' || tk->tokenString[q] == 'e'){
+									flThree = 1;
+									q++;
+									while(isdigit(tk->tokenString[q])){
+										q++;
+									}
+								}
+								if(flThree == 1){
+									break;
+								}
+								q++;
+								
+							}
+						
+						}else{
+						/*malformed token*/
 						}
 					}
 					if(floatCheck == 1){
