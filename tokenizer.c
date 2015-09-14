@@ -7,25 +7,17 @@
 #include <ctype.h>
 
 /*
- * Token type. Essentially a linked list of tokens, the head of which is the tokenList of the TokenizerT.
- */
-struct Token_ {
-  char *type;
-  char *string;
-  struct Token_ *next;
-};
-typedef struct Token_ Token;
-
-/*
  * Tokenizer type.  You need to fill in the type as part of your implementation.
  */
 struct TokenizerT_ {
-    Token *tokenList;
-    char *tokenString;
+  char *tokenString;
 	int position;
 };
 typedef struct TokenizerT_ TokenizerT;
 
+char *addToken(TokenizerT *tk, char *type, int p, int q);
+
+char *keywords[] = {"if","auto","break","case","char","const","continue","default","do","double","else","enum","extern","float","for","goto","int","long","register","return","short","signed","sizeof","static","struct","switch","typedef","union","unsigned","void","volatile","while"};
 /*
  * TKCreate creates a new TokenizerT object for a given token stream
  * (given as a string).
@@ -41,9 +33,8 @@ typedef struct TokenizerT_ TokenizerT;
  */
 
 TokenizerT *TKCreate( char * ts ) {
-    TokenizerT *Tokenizer = malloc(sizeof(TokenizerT));
-	Tokenizer->tokenString = malloc(sizeof(char) * strlen(ts));
-	Tokenizer->tokenList = 0;
+  TokenizerT *Tokenizer = malloc(sizeof(TokenizerT));
+	Tokenizer->tokenString = malloc(sizeof(char) * strlen(ts) + 1);
 	strcpy(Tokenizer->tokenString, ts);
 	Tokenizer->position = 0;
 	return Tokenizer;
@@ -57,6 +48,8 @@ TokenizerT *TKCreate( char * ts ) {
  */
 
 void TKDestroy( TokenizerT * tk ) {
+  free(tk->tokenString);
+  free(tk);
 }
 
 /*
@@ -76,130 +69,288 @@ char *TKGetNextToken( TokenizerT * tk ) {
 	int q = p;
 	int i = 0;
 	int j = 0;
+	char *string;
 	int length = strlen(tk->tokenString);
 	int octalCheck = 0;
-	Token *token;
-	
-	if(p < length){
+	int floatCheck = 0;
+  char *type;
+	while(p < length){
 		if(isalpha(tk->tokenString[p])){
-			printf("p: %d\n", p);	
 			while(isalnum(tk->tokenString[q])){
 				q++;
-            }
-      	  	printf("q: %d\n", q);
-      /*
-      * (q-p) + 1  for array size
+      }
+      type = "word";
+
+      /*Extra credit - Checking for c keywords
+      *"if" isn't working and I have no idea why. I'm getting some '`' char in gdb. wtf C.
       */
-          token = malloc(sizeof(Token));	
-          token->type = malloc(5);
-          token->type = "word\0";
-          token->string = malloc((q-p) + 1);
-          /*
-          *
-          */ 	
-	
-          j = 0;
-          for(i = p; i < q; i++){
-              token->string[j] = tk->tokenString[i];
-              j++;
-          }
-		  
-          token->string[j+1] = '\0';
-          printf("token: %s\n", token->string);
-          printf("type: %s\n", token->type);
-		  token->next = tk->tokenList;
-          tk->tokenList = token;
-		
+      string = malloc((q-p) * sizeof(char));
+      for(i = p; i < q; i++){
+        string[j] = tk->tokenString[i];
+        j++;
+      }
+      
+      for(i = 0; i < 32; i++){ /*32 keywords*/
+        if(strcmp(string, keywords[i]) == 0){
+          type = "c keyword";
+          break;
+        }
+      }
+      return addToken(tk, type, p, q);
 		/*This section will handle all numbers starting with 0, including Hex, Float, Decimal, and Octal */
 		}else if(tk->tokenString[p] == '0'){
-		
-			printf("p: %d\n", p);
 			/*handles Hex*/
-			if(tk->tokenString[p+1] != NULL && tk->tokenString[p+1] == 'x' || tk->tokenString[p+1] == 'X'){
-				
+			if(tk->tokenString[p+1] != '\0' && (tk->tokenString[p+1] == 'x' || tk->tokenString[p+1] == 'X')){
 				q = p+2;
 				while(isxdigit(tk->tokenString[q])){
 					q++;
 				}
 				
-				token = malloc(sizeof(Token));
-				token->type = malloc(29);
-				token->type = "hexadecimal integer constant\0";
-				token->string = malloc((q-p) +1);
-				
-			/*handles decimal and octal*/	
+				type = "hexadecimal integer constant";
+				return addToken(tk, type, p, q);
+			/*handles decimal and octal*/
 			}else{
-				while(isdigit(tk->tokenString[q])){
+				while(tk->tokenString[q] == '.' || isdigit(tk->tokenString[q])){
 					if(tk->tokenString[q] == '8' || tk->tokenString[q] == '9'){   /*checks if decimal or octal*/
 						octalCheck = 1;											  /*designates that this token is not Octal*/
 					}
+					if(tk->tokenString[q] == '.'){
+						q++;
+						floatCheck = 1;
+						while(isdigit(tk->tokenString[q])){
+							q++;
+						}
+					}
+					if(floatCheck == 1){
+						break;
+					}
 					q++;
 				}
-				
-				printf("q: %d\n", q);
-			
-				token = malloc(sizeof(Token));	
-				if(octalCheck == 0){
-					token->type = malloc(23);
-					token->type = "octal integer constant\0";
-					token->string = malloc((q-p) + 1);
+				if(floatCheck == 1){
+					type = "floating-point constant";
+					return addToken(tk, type, p, q);
+				}else if(octalCheck == 0){
+					type = "octal integer constant";
+					return addToken(tk, type, p, q);
 				}else{
-					token->type = malloc(25);
-					token->type = "decimal integer constant\0";
-					token->string = malloc((q-p) + 1);
+					type = "decimal integer constant";
+					return addToken(tk, type, p, q);
 				}
-			
 			}
-			
-			
-			j = 0;
-			for(i = p; i < q; i++){
-				token->string[j] = tk->tokenString[i];
-				j++;
-			}
-		  
-			token->string[j+1] = '\0';
-			printf("token: %s\n", token->string);
-			printf("type: %s\n", token->type);
-			token->next = tk->tokenList;
-			tk->tokenList = token;
-			
-		/*Finds Octal and Decimal tokens that don't start with 0. Still needs error checking but shouldn't be a big deal.
+		/*Finds Float and Decimal tokens that don't start with 0. Still needs error checking but shouldn't be a big deal.
 		I'll do error checking tomorrow after class */
-		}else if(isdigit(tk->tokenString[p]) && tk->tokenString[p] != "0"){
-			while(isdigit(tk->tokenString[q])){
+		}else if(isdigit(tk->tokenString[p]) && tk->tokenString[p] != '0'){
+			while(tk->tokenString[q] == '.' || isdigit(tk->tokenString[q])){
+				
+				/*checks for float*/
+				if(tk->tokenString[q] == '.'){
+					q++;
+					floatCheck = 1;
+					while(isdigit(tk->tokenString[q])){
+						q++;
+					}
+				}
+				if(floatCheck == 1){
+					break;
+				}
 				q++;
 			}
 			
-			printf("q: %d\n", q);
-			
-		    token = malloc(sizeof(Token));	
-			token->type = malloc(25);
-			token->type = "decimal integer constant\0";
-			token->string = malloc((q-p) + 1);
-			
-			
-			j = 0;
-			for(i = p; i < q; i++){
-				token->string[j] = tk->tokenString[i];
-				j++;
+			if(floatCheck == 1){
+				type = "floating-point constant";
+			}else{
+				type = "decimal integer constant";
 			}
-		  
-			token->string[j+1] = '\0';
-			printf("token: %s\n", token->string);
-			printf("type: %s\n", token->type);
-			token->next = tk->tokenList;
-			tk->tokenList = token;
+			return addToken(tk, type, p, q);
+		/*EXTRA CREDIT - Check for tokes within double quotes*/
+		}else if(tk->tokenString[p] == '"'){
+		  q++;
+		  while((tk->tokenString[q] != '"')){
+				q++;
+			}
+			q++;
+			type = "double-quoted";
+			return addToken(tk, type, p, q);
+		/*EXTRA CREDIT - Check for tokes within single quotes*/
+		}else if(tk->tokenString[p] == '\''){
+		  q++;
+		  while((tk->tokenString[q] != '\'')){
+				q++;
+			}
+			q++;
+			type = "single-quoted";
+			return addToken(tk, type, p, q);
 			
+/*Check for whitespace characters, skip over*/
 		}else if(isspace(tk->tokenString[p])){
-			printf("spaceChar\n");
-			q++;	
+			q++;
+			p = q;
+		  tk->position = p;
+			continue;
+		/*Check for all C operators and anything that isn't returns 0*/
 		}else{
-			return 0;
+		  switch(tk->tokenString[p]){
+		    case '(':
+		      type = "open parenthesis";
+		      break;
+		    case ')':
+		      type = "close parenthesis";
+		      break;
+		    case '[':
+		      type = "leftbrace";
+		      break;
+		    case ']':
+		      type = "rightbrace";
+		      break;
+		    case '.':
+		      type = "dot operator";
+		      break;
+		    case '!':
+		      if(tk->tokenString[p+1] == '='){
+		        q++;
+		        type = "not equals operator";
+		      }else{
+		        type = "negation operator";
+		      }
+		      break;
+		    case '~':
+		      type = "tilde";
+		      break;
+		    case '+':
+		    	if(tk->tokenString[p+1] == '+'){
+		        q++;
+		        type = "increment operator";
+		      }else if(tk->tokenString[p+1] == '='){
+		        q++;
+		        type = "increment assignment operator";
+		      }else{
+		        type = "addition operator";
+		      }
+		      break;
+		    case '-':
+		      if(tk->tokenString[p+1] == '-'){
+		        q++;
+		        type = "decrement operator";
+		      }else if(tk->tokenString[p+1] == '='){
+		        q++;
+		        type = "decrement assignment operator";
+		      }else{
+		        type = "subtraction operator";
+		      }
+		      break;
+		    case '*':
+		    	if(tk->tokenString[p+1] == '='){
+		        q++;
+		        type = "multiply assignment operator";
+		      }else{
+		        type = "multiply operator";
+		      }
+		      break;
+		    case '/':
+		    	if(tk->tokenString[p+1] == '='){
+		        q++;
+		        type = "division assignment operator";
+		    	}else if(tk->tokenString[p+1] == '*'){ /*EXTRA CREDIT - Comments*/
+		    	  q++;
+		    	  q++;
+		    	  while(tk->tokenString[q] != '*' && tk->tokenString[q+1] != '/'){
+		    	    q++;
+		    	  }
+		    	  q++;
+		    	  q++;
+		    	  p = q;
+		        tk->position = p;
+			      continue;
+		      }else{
+		        type = "division operator";
+		      }
+		      break;
+		    case '%':
+		    	if(tk->tokenString[p+1] == '='){
+		        q++;
+		        type = "modulus assignment operator";
+		      }else{
+		        type = "modulus operator";
+		      }
+		      break;
+		    case '<':
+		    	if(tk->tokenString[p+1] == '<'){
+		    	  if(tk->tokenString[p+2] == '='){
+		    	    q++;
+		    	    q++;
+		          type = "left shift assignment operator";
+		    	  }else{
+		    	    q++;
+		    	    type = "left shift operator";
+		    	  }
+		    	}else if(tk->tokenString[p+1] == '='){
+		    	  q++;
+		    	  type = "less or equal operator";
+		      }else{
+            type = "less than operator";
+		      }
+		      break;
+		    case '>':
+		    	if(tk->tokenString[p+1] == '>'){
+		    	  if(tk->tokenString[p+2] == '='){
+		    	    q++;
+		    	    q++;
+		          type = "right shift assignment operator";
+		    	  }else{
+		    	    q++;
+		    	    type = "right shift operator";
+		    	  }
+		    	}else if(tk->tokenString[p+1] == '='){
+		    	  q++;
+		    	  type = "greater or equal operator";
+		      }else{
+            type = "greater than operator";
+		      }
+		      break;
+		    case '&':
+		    	if(tk->tokenString[p+1] == '&'){
+	    	    q++;
+	    	    type = "logical and operator";
+		    	}else if(tk->tokenString[p+1] == '='){
+		    	  q++;
+	    	    type = "bitwise and assignment operator";
+		      }else{
+            type = "bitwise and operator";
+		      }
+		      break;
+		    case '|':
+		      if(tk->tokenString[p+1] == '|'){
+	    	    q++;
+	    	    type = "logical or operator";
+		    	}else if(tk->tokenString[p+1] == '|'){
+		    	  q++;
+	    	    type = "bitwise or assignment operator";
+		      }else{
+            type = "bitwise or operator";
+		      }
+		      break;
+		    case '^':
+		      if(tk->tokenString[p+1] == '='){
+		        q++;
+		        type = "exclusive or assignment operator";
+		      }else{
+		        type = "exclusive or operator";
+		      }
+		      break;
+		    case ',':
+		      type = "comma operator";
+		      break;
+		    case '?':
+		      type = "ternary operator";
+		      break;
+		    default:  /*Not Recognized*/
+		      return 0;
+		  }
+		  q++;
+		  return addToken(tk, type, p, q);
 		}
 		p = q;
 		tk->position = p;
-		return token->string;
 	}
 	return 0;
 }
@@ -213,19 +364,30 @@ char *TKGetNextToken( TokenizerT * tk ) {
 
 int main(int argc, char **argv) {
 	TokenizerT *Tokenizer = TKCreate(argv[1]);
-    printf("Input: %s\n", Tokenizer->tokenString);
-    
+
 	while(TKGetNextToken(Tokenizer) != 0);
-    printTokens(Tokenizer);
+	TKDestroy(Tokenizer);
 	return 0;
 }
 
-void printTokens(TokenizerT *tk){	
-	/*Prints all tokens in the linked list */
-	printf("Final output test: \n");
-	Token *root = tk->tokenList;
-	while(root != 0){
-		printf("%s \"%s\"\n", root->type, root->string);
-		root = root->next;		  
-    }
+char *addToken(TokenizerT *tk, char *type, int p, int q){
+  int i = 0;
+  int j = 0;
+  char *string;
+  string = malloc(((q-p) + 2) * sizeof(char));
+
+  /*
+   *Copies the string into the token from the tokenString
+   */
+  for(i = p; i < q; i++){
+    string[j] = tk->tokenString[i];
+    j++;
+  }
+  string[j+1] = '\0';
+  
+  printf("%s \"%s\"\n", type, string);
+  
+  p = q;
+  tk->position = p;
+  return string;
 }
